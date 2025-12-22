@@ -1,4 +1,8 @@
-"""PASTA MultiModal Implementation"""
+"""
+    PASTAMM MultiModal Implementation
+    Arthor: Shiyu Lu
+    Date: 19 December 2025
+"""
 import torch
 import abc, json
 from contextlib import contextmanager
@@ -162,18 +166,31 @@ class PASTAMM(abc.ABC):
                 return_offsets_mapping=True,    # 返回字符级到 token 的偏移映射
             )
             offset_mapping = inputs.pop("offset_mapping")
+            input_ids = inputs.pop("input_ids")
+            attention_mask = inputs.pop("attention_mask")
 
         images_tensor = image_processor.preprocess(
             images,
             return_tensors="pt",
-        )["pixel_values"].to(dtdtype=self.model.dtype)
+        )["pixel_values"].to(dtype=self.model.dtype)
 
-
-
-
+        
         if device is not None:
-            inputs = inputs.to(device)
+            input_ids = input_ids.to(device)
+            attention_mask = attention_mask.to(device)
             images_tensor = images_tensor.to(device)
+        
+        # use llava model's function prepare_inputs_labels_for_multimodal to generate multimodal inputs
+        result_tuple = self.model.prepare_inputs_labels_for_multimodal(
+            input_ids=input_ids,
+            position_ids=None,
+            attention_mask=attention_mask,
+            past_key_values=None,
+            labels=None,
+            images=images_tensor,
+
+        )
+
         return inputs, images_tensor, offset_mapping
     
 
