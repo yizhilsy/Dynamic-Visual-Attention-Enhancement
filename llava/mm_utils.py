@@ -168,6 +168,7 @@ def process_images(images, image_processor, model_cfg):
     new_images = []
     if image_aspect_ratio == 'pad':
         for image in images:
+            # 把任意长宽比的图像，通过在短边方向 padding，扩展成“正方形图像”，并且 padding 区域使用“数据集均值颜色”填充
             image = expand2square(image, tuple(int(x*255) for x in image_processor.image_mean))
             image = image_processor.preprocess(image, return_tensors='pt')['pixel_values'][0]
             new_images.append(image)

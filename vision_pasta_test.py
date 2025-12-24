@@ -6,7 +6,7 @@ from transformers import AutoTokenizer
 
 # Initialize pre-trained LlaVA MLLM
 model_path = "/s/llava-series/llava-v1.5-7b"
-device = "cuda:1"
+device = "cuda:0"
 
 tokenizer, model, image_processor, context_len = load_pretrained_model(
     model_path=model_path,
@@ -47,11 +47,19 @@ dataset = load_dataset(
 prompts = [dataset[0]['question'], dataset[1]['question']]
 images = [dataset[0]['image'], dataset[1]['image']]
 
-pastamm.inputs_from_batch(
+multimodal_input_embeds, attention_mask, image_position_mask, input_ids, images_tensor = pastamm.inputs_from_batch(
     prompts,
     images,
     tokenizer,
     image_processor,
     device,
 )
+
+with pastamm.apply_steering(
+    model = model,
+    multimodal_input_embeds = multimodal_input_embeds,
+    attention_mask = attention_mask,
+    image_position_mask = image_position_mask
+) as steered_model:
+    outputs = steered_model.generate(input_ids, images_tensor, max_new_tokens=128)
 
