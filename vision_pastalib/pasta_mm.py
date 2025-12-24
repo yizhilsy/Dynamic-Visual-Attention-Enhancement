@@ -32,7 +32,7 @@ from transformers import CLIPImageProcessor
 
 class PASTAMM(abc.ABC):
     ATTN_MODULE_NAME = {
-        "llava": "model.model.layers.{}.self_attn",
+        "llava": "model.layers.{}.self_attn",
     }
     ATTENTION_MASK_ARGIDX = {}
 
@@ -65,7 +65,11 @@ class PASTAMM(abc.ABC):
             Obtain the model type and complete the configuration.
             获取模型类型并获取模型每层注意力头的数量
         """
-        if isinstance(model, transformers.LlamaForCausalLM):
+        # 多模态领域中的模型
+        if isinstance(model, LlavaLlamaForCausalLM):
+            self.model_name = "llava"
+            self.num_attn_head = model.config.num_attention_heads
+        elif isinstance(model, transformers.LlamaForCausalLM):
             self.model_name = "llama"
             self.num_attn_head = model.config.num_attention_heads
         elif isinstance(model, transformers.GPTJForCausalLM):
@@ -79,11 +83,6 @@ class PASTAMM(abc.ABC):
             self.num_attn_head = model.config.num_attention_heads
         elif model.__class__.__name__ == "Phi3ForCausalLM":
             self.model_name = "phi3mini"
-            self.num_attn_head = model.config.num_attention_heads
-
-        # 多模态领域中的模型
-        elif isinstance(model, LlavaLlamaForCausalLM):
-            self.model_name = "llava"
             self.num_attn_head = model.config.num_attention_heads
         else:
             raise ValueError("Unimplemented Model Type.")
@@ -155,12 +154,15 @@ class PASTAMM(abc.ABC):
         
         # 基于 image_position_mask 进行视觉token的注意力增强
         for bi, row_image_position_mask in enumerate(image_position_mask):
+            attn_heads = attention_mask[bi, head_idx]
             if self.scale_position == "include":
-                attention_mask[bi, head_idx, :, row_image_position_mask] += self.scale_constant
+                attn_heads[:, :, row_image_position_mask] += self.scale_constant
             elif self.scale_position == "exclude":
-                attention_mask[bi, head_idx, :, ~row_image_position_mask] += self.scale_constant
+                attn_heads[:, :, ~row_image_position_mask] += self.scale_constant
             else:
                 raise ValueError(f"Unexcepted {self.scale_position}.")
+            attention_mask[bi, head_idx] = attn_heads
+        
         if self.scale_position == "include":
             attention_mask[:, head_idx, :, :] -= self.scale_constant
 
