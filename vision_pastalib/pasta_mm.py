@@ -335,8 +335,10 @@ class PASTAMM(abc.ABC):
             attention_mask = attention_mask.to(device=device)
             images_tensor = images_tensor.to(device=device, dtype=self.model.dtype)
         
+        _attention_mask = attention_mask
+
         # use llava model's function prepare_inputs_labels_for_multimodal to generate multimodal inputs
-        _, position_ids, attention_mask, past_key_values, new_input_embeds, new_labels, image_position_mask = self.model.prepare_inputs_labels_for_multimodal(
+        _, position_ids, attention_mask, past_key_values, new_input_embeds, new_labels, image_position_mask = self.model.prepare_inputs_image_position_mask_for_multimodal(
             input_ids=input_ids,
             position_ids=None,
             attention_mask=attention_mask,
@@ -346,7 +348,8 @@ class PASTAMM(abc.ABC):
         )
 
         # pasta_mm
-        # return multimodal concated embedding tensor and corresponding attention_mask and corresponding image_position_mask
-        return new_input_embeds, attention_mask, image_position_mask, input_ids, images_tensor
+        # return multimodal concated embedding tensor and corresponding image_position_mask
+        # return padded input_embeds, attention_mask and pre_processed images_tensor
+        return new_input_embeds, attention_mask, image_position_mask, input_ids, _attention_mask, images_tensor
     
 
