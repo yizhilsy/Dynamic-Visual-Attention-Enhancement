@@ -156,9 +156,9 @@ class PASTAMM(abc.ABC):
         for bi, row_image_position_mask in enumerate(image_position_mask):
             attn_heads = attention_mask[bi, head_idx]
             if self.scale_position == "include":
-                attn_heads[:, :, row_image_position_mask] += self.scale_constant
+                attn_heads[:, :, row_image_position_mask.nonzero(as_tuple=True)[0]] += self.scale_constant
             elif self.scale_position == "exclude":
-                attn_heads[:, :, ~row_image_position_mask] += self.scale_constant
+                attn_heads[:, :, (~row_image_position_mask).nonzero(as_tuple=True)[0]] += self.scale_constant
             else:
                 raise ValueError(f"Unexcepted {self.scale_position}.")
             attention_mask[bi, head_idx] = attn_heads

@@ -1,4 +1,7 @@
 embeds/*
+Experimental_Analysis_Script/Experimental_Data
+eval_tool/
+
 # Python cache
 __pycache__/
 *.pyc

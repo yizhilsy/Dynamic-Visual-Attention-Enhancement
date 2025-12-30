@@ -5,8 +5,8 @@ from llava.eval.run_llava import eval_model
 from transformers import AutoTokenizer
 
 # Initialize pre-trained LlaVA MLLM
-model_path = "/d/data/llava-series/llava-v1.5-7b"
-device = "cuda:0"
+model_path = "/s/llava-series/llava-v1.5-7b"
+device = "cuda:1"
 
 tokenizer, model, image_processor, context_len = load_pretrained_model(
     model_path=model_path,
@@ -41,12 +41,12 @@ from datasets import load_dataset
 
 dataset = load_dataset(
     "parquet",
-    data_files="/d/data/MME/data/*.parquet",
+    data_files="/s/datasets/MME/data/*.parquet",
     split="train"
 )
 
-prompts = [dataset[0]['question'], dataset[1]['question']]
-images = [dataset[0]['image'], dataset[1]['image']]
+prompts = [dataset[2]['question'], dataset[3]['question']]
+images = [dataset[2]['image'], dataset[3]['image']]
 
 multimodal_input_embeds, attention_mask, image_position_mask, input_ids, _attention_mask, images_tensor = pastamm.inputs_from_batch(
     prompts,
@@ -64,3 +64,4 @@ with pastamm.apply_mm_steering(
 ) as steered_model:
     outputs = steered_model.generate(input_ids, images_tensor, attention_mask=_attention_mask, max_new_tokens=128)
 
+print(tokenizer.batch_decode(outputs, skip_special_tokens=True))
